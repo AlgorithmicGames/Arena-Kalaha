@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>AI-Tournaments interface template</title>
+		<meta content="width=device-width, initial-scale=1.0" name="viewport">
+		<meta content="yes" name="mobile-web-app-capable">
+		<style>
+			#lock {
+				background: rgba(128, 128, 128, .5);
+				justify-content: center;
+				font-size: xxx-large;
+				align-items: center;
+				position: absolute;
+				display: flex;
+				z-index: 9999;
+				height: 100%;
+				width: 100%;
+				right: 0;
+				top: 0;
+			}
+			#lock.engaged {
+				display: none;
+			}
+		</style>
+		<script>
+			'use strict'
+			let responseLock;
+			function a(){
+				responseLock = document.getElementById('lock');
+				let _init;
+				window.addEventListener('message', messageEvent => {
+					if(messageEvent.data.type === 'Post'){
+						responseLock.classList.remove('engaged');
+						respond('YOUR_RESPONSE');
+					}else if(!_init){
+						_init = messageEvent.data;
+					}
+				});
+				window.opener.postMessage(null, '*');
+			}
+			function respond(response){
+				if(!responseLock.classList.contains('engaged')){
+					responseLock.classList.add('engaged');
+					window.opener.postMessage({
+						value: response,
+						executionSteps: {toRespond: 0, toTerminate: 0} // Optional by the arena.
+					}, '*');
+				}
+			}
+		</script>
+	</head>
+	<body onload="a()">
+		<div id="lock" class="engaged"><span>Awaiting update</span></div>
+	</body>
+</html>
