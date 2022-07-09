@@ -2,11 +2,14 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
-		<title>AI-Tournaments interface template</title>
+		<title>AI-Tournaments Kalaha human interface</title>
 		<meta content="width=device-width, initial-scale=1.0" name="viewport">
 		<meta content="yes" name="mobile-web-app-capable">
 		<style>
 			#lock {
+				display: none;
+			}
+			#lock.engaged {
 				background: rgba(128, 128, 128, .5);
 				justify-content: center;
 				font-size: xxx-large;
@@ -19,22 +22,180 @@
 				right: 0;
 				top: 0;
 			}
-			#lock.engaged {
-				display: none;
+
+			#gamebord-wrapper {
+				text-align: center;
+			}
+
+			#gamebord {
+				cursor: default;
+				user-select: none;
+				display: inline-block;
+				border: 1px solid black;
+				background-color: whitesmoke;
+			}
+
+			.column {
+				display: table-cell;
+			}
+
+			.row {
+				display: flex;
+			}
+
+			#column-up>.square, #column-down>.square {
+				transform: translate(0%, 50%);
+				display: inline-grid;
+			}
+
+			.square {
+				border: 1px solid black;
+				border-radius: 50%;
+				text-align: center;
+				min-width: 18.2px;
+				margin: 1px;
+			}
+
+			.marked {
+				border-color: orange;
+			}
+			.hint {
+				border-color: crimson;
+			}
+			.final {
+				background-color: darkmagenta !important;
 			}
 		</style>
 		<script>
 			'use strict'
 			let responseLock;
 			function a(){
+				function onLeave(event){
+					for(let index = 0; index < baseUp; index++){
+						let square = document.getElementById('square_' + index);
+						square.classList.remove('marked');
+						square.classList.remove('hint');
+						square.classList.remove('final');
+					}
+				}
+				function onEnter(event){
+					let square = event.target;
+					let index = parseInt(square.id.substring('square_'.length));
+					let value = parseInt(square.innerHTML);
+					let valueWasZero = value == 0;
+
+					if(baseDown <= index){
+						return;	// Is on wrong side
+					}
+					square.classList.add('marked');
+					while(0 < value){
+						index++;
+						index %= baseUp;
+
+						if(index === baseUp){
+							continue;	// Is on wrong base
+						}
+
+						value--;
+
+						document.getElementById('square_' + index).classList.add('hint');
+					}
+
+					if(!valueWasZero){
+						document.getElementById('square_' + index).classList.add('final');
+					}
+				}
+				function onClick(event){
+					let square = event.target;
+					let index = parseInt(square.id.substring(7));
+					let value = parseInt(square.innerHTML);
+					respond(index);
+
+					if(value === 0){
+						return;	// Clicked on empty cell
+					}
+					onLeave();	// Remove all hints
+					square.innerHTML = 0;
+
+					while(0 < value){
+						index++;
+						index %= baseUp;
+
+						if(index === baseUp){
+							continue;
+						}
+						value--;
+						let nextSquare = document.getElementById('square_' + index);
+						let currentValue = parseInt(nextSquare.innerHTML);
+						nextSquare.innerHTML = currentValue + 1;
+					}
+
+					resizeGameboard();
+				}
+				function resizeGameboard(){
+					let gameboard = document.getElementById('gamebord');
+					let allSquares = [...document.getElementsByClassName('square')];
+					gameboard.style.zoom = 1;
+					if(allSquares.length){
+						let maxWidth = allSquares[0].clientHeight;
+						// Get max
+						for(let square of allSquares){
+							square.style.width = '';
+							maxWidth = Math.max(maxWidth, square.clientWidth);
+						}
+						// Set max
+						for(let square of allSquares){
+							square.style.width = maxWidth + 'px';
+						}
+						let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth;
+						gameboard.style.zoom = zoom;
+					}
+				}
 				responseLock = document.getElementById('lock');
 				let _init;
+				let baseDown;
+				let baseUp;
+				let boardSize;
+				let startValue;
+				window.onresize = resizeGameboard;
 				window.addEventListener('message', messageEvent => {
-					if(messageEvent.data.type === 'Post'){
-						responseLock.classList.remove('engaged');
-						respond('YOUR_RESPONSE');
-					}else if(!_init){
+					if(!_init){
 						_init = messageEvent.data;
+						startValue = _init.settings.gameboard.startValue;
+						boardSize = _init.settings.gameboard.boardLength;
+						baseDown = boardSize;
+						baseUp = boardSize*2 + 1;
+					}else if(messageEvent.data.type === 'Post'){
+						responseLock.classList.remove('engaged');
+						let state = messageEvent.data.message;
+						// Rezero base columns.
+						document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>';
+						document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>';
+
+						// Recreate up and down rows.
+						let rowUp = document.getElementById('rowUp');
+						let rowDown = document.getElementById('rowDown');
+						rowUp.innerHTML = '';
+						rowDown.innerHTML = '';
+						for(let index = 0; index < boardSize; index++){
+							let indexUp = (boardSize*2 - index);
+							let indexDown = index;
+							rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>';
+							rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>';
+						}
+						for(let index = 0; index < boardSize; index++){
+							let squareUp = document.getElementById('square_' + (boardSize*2-1-index));
+							let squareDown = document.getElementById('square_' + index);
+
+							squareUp.onmouseenter = onEnter;
+							squareUp.onmouseleave = onLeave;
+							squareUp.onclick = onClick;
+
+							squareDown.onmouseenter = onEnter;
+							squareDown.onmouseleave = onLeave;
+							squareDown.onclick = onClick;
+						}
+						resizeGameboard();
 					}
 				});
 				window.opener.postMessage(null, '*');
@@ -52,5 +213,15 @@
 	</head>
 	<body onload="a()">
 		<div id="lock" class="engaged"><span>Awaiting update</span></div>
+		<div id="gamebord-wrapper">
+			<div id="gamebord">
+				<div class="column" id="column-up"></div>
+				<div class="column">
+					<div class="row" id="rowUp"></div>
+					<div class="row" id="rowDown"></div>
+				</div>
+				<div class="column" id="column-down"></div>
+			</div>
+		</div>
 	</body>
 </html>
