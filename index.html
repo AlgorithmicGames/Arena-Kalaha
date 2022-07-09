@@ -127,7 +127,20 @@
 						value--;
 						let nextSquare = document.getElementById('square_' + index);
 						let currentValue = parseInt(nextSquare.innerHTML);
-						nextSquare.innerHTML = currentValue + 1;
+
+						let isOnRightSide = 0 <= index && index < baseDown;
+						if(currentValue === 0 && value === 0 && isOnRightSide && _init.settings.rules.empty_capture){
+							index = boardSize*2 - index;
+							let opositSquare = document.getElementById('square_' + index);
+							let opositValue = parseInt(opositSquare.innerHTML);
+							opositSquare.innerHTML = 0;
+
+							let baseSquare = document.getElementById('square_'+baseDown);;
+							let baseValue = parseInt(baseSquare.innerHTML);
+							baseSquare.innerHTML = baseValue + opositValue + 1;
+						}else{
+							nextSquare.innerHTML = currentValue + 1;
+						}
 					}
 
 					resizeGameboard();
