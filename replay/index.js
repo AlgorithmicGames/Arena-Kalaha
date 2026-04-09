@@ -133,12 +133,10 @@ function a() {
 			selectMatches.appendChild(option)
 			option.innerHTML = 'Match ' + (index + 1)
 			option.dataset.index = index
-			if (index === 0) {
-				selectMatches.onchange()
-			}
 			if (replay.arenaResult.match.length === 1) {
 				selectMatches.style.disabled = 'none'
 			}
 		})
+		selectMatches.onchange()
 	})
 }
