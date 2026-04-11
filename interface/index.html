@@ -10,7 +10,7 @@
 				display: none;
 			}
 			#lock.engaged {
-				background: rgba(128, 128, 128, .5);
+				background: rgba(128, 128, 128, 0.5);
 				justify-content: center;
 				font-size: xxx-large;
 				align-items: center;
@@ -43,7 +43,7 @@
 				display: flex;
 			}
 
-			#column-up>.square, #column-down>.square {
+			#column-up > .square, #column-down > .square {
 				transform: translate(0%, 50%);
 				display: inline-grid;
 			}
@@ -68,158 +68,158 @@
 		</style>
 		<script>
 			'use strict'
-			let responseLock;
-			function a(){
-				function onLeave(event){
-					for(let index = 0; index < baseUp; index++){
-						let square = document.getElementById('square_' + index);
-						square.classList.remove('marked');
-						square.classList.remove('hint');
-						square.classList.remove('final');
+			let responseLock
+			function a() {
+				function onLeave(event) {
+					for (let index = 0; index < baseUp; index++) {
+						let square = document.getElementById('square_' + index)
+						square.classList.remove('marked')
+						square.classList.remove('hint')
+						square.classList.remove('final')
 					}
 				}
-				function onEnter(event){
-					let square = event.target;
-					let index = parseInt(square.id.substring('square_'.length));
-					let value = parseInt(square.innerHTML);
-					let valueWasZero = value == 0;
+				function onEnter(event) {
+					let square = event.target
+					let index = parseInt(square.id.substring('square_'.length))
+					let value = parseInt(square.innerHTML)
+					let valueWasZero = value == 0
 
-					if(baseDown <= index){
-						return;	// Is on wrong side
+					if (baseDown <= index) {
+						return // Is on wrong side
 					}
-					square.classList.add('marked');
-					while(0 < value){
-						index++;
-						index %= baseUp;
+					square.classList.add('marked')
+					while (0 < value) {
+						index++
+						index %= baseUp
 
-						if(index === baseUp){
-							continue;	// Is on wrong base
+						if (index === baseUp) {
+							continue // Is on wrong base
 						}
 
-						value--;
+						value--
 
-						document.getElementById('square_' + index).classList.add('hint');
+						document.getElementById('square_' + index).classList.add('hint')
 					}
 
-					if(!valueWasZero){
-						document.getElementById('square_' + index).classList.add('final');
+					if (!valueWasZero) {
+						document.getElementById('square_' + index).classList.add('final')
 					}
 				}
-				function onClick(event){
-					let square = event.target;
-					let index = parseInt(square.id.substring(7));
-					let value = parseInt(square.innerHTML);
-					respond(index);
+				function onClick(event) {
+					let square = event.target
+					let index = parseInt(square.id.substring(7))
+					let value = parseInt(square.innerHTML)
+					respond(index)
 
-					if(value === 0){
-						return;	// Clicked on empty cell
+					if (value === 0) {
+						return // Clicked on empty cell
 					}
-					onLeave();	// Remove all hints
-					square.innerHTML = 0;
+					onLeave() // Remove all hints
+					square.innerHTML = 0
 
-					while(0 < value){
-						index++;
-						index %= baseUp;
+					while (0 < value) {
+						index++
+						index %= baseUp
 
-						if(index === baseUp){
-							continue;
+						if (index === baseUp) {
+							continue
 						}
-						value--;
-						let nextSquare = document.getElementById('square_' + index);
-						let currentValue = parseInt(nextSquare.innerHTML);
+						value--
+						let nextSquare = document.getElementById('square_' + index)
+						let currentValue = parseInt(nextSquare.innerHTML)
 
-						let isOnRightSide = 0 <= index && index < baseDown;
-						if(currentValue === 0 && value === 0 && isOnRightSide && _init.settings.rules.empty_capture){
-							index = boardSize*2 - index;
-							let opositSquare = document.getElementById('square_' + index);
-							let opositValue = parseInt(opositSquare.innerHTML);
-							opositSquare.innerHTML = 0;
+						let isOnRightSide = 0 <= index && index < baseDown
+						if (currentValue === 0 && value === 0 && isOnRightSide && _init.settings.rules.empty_capture) {
+							index = boardSize * 2 - index
+							let opositSquare = document.getElementById('square_' + index)
+							let opositValue = parseInt(opositSquare.innerHTML)
+							opositSquare.innerHTML = 0
 
-							let baseSquare = document.getElementById('square_'+baseDown);;
-							let baseValue = parseInt(baseSquare.innerHTML);
-							baseSquare.innerHTML = baseValue + opositValue + 1;
-						}else{
-							nextSquare.innerHTML = currentValue + 1;
+							let baseSquare = document.getElementById('square_' + baseDown)
+							let baseValue = parseInt(baseSquare.innerHTML)
+							baseSquare.innerHTML = baseValue + opositValue + 1
+						} else {
+							nextSquare.innerHTML = currentValue + 1
 						}
 					}
 
-					resizeGameboard();
+					resizeGameboard()
 				}
-				function resizeGameboard(){
-					let gameboard = document.getElementById('gamebord');
-					let allSquares = [...document.getElementsByClassName('square')];
-					gameboard.style.zoom = 1;
-					if(allSquares.length){
-						let maxWidth = allSquares[0].clientHeight;
+				function resizeGameboard() {
+					let gameboard = document.getElementById('gamebord')
+					let allSquares = [...document.getElementsByClassName('square')]
+					gameboard.style.zoom = 1
+					if (allSquares.length) {
+						let maxWidth = allSquares[0].clientHeight
 						// Get max
-						for(let square of allSquares){
-							square.style.width = '';
-							maxWidth = Math.max(maxWidth, square.clientWidth);
+						for (let square of allSquares) {
+							square.style.width = ''
+							maxWidth = Math.max(maxWidth, square.clientWidth)
 						}
 						// Set max
-						for(let square of allSquares){
-							square.style.width = maxWidth + 'px';
+						for (let square of allSquares) {
+							square.style.width = maxWidth + 'px'
 						}
-						let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth;
-						gameboard.style.zoom = zoom;
+						let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth
+						gameboard.style.zoom = zoom
 					}
 				}
-				responseLock = document.getElementById('lock');
-				let _init;
-				let baseDown;
-				let baseUp;
-				let boardSize;
-				let startValue;
-				window.onresize = resizeGameboard;
-				window.addEventListener('message', messageEvent => {
-					if(!_init){
-						_init = messageEvent.data;
-						startValue = _init.settings.gameboard.startValue;
-						boardSize = _init.settings.gameboard.boardLength;
-						baseDown = boardSize;
-						baseUp = boardSize*2 + 1;
-					}else if(messageEvent.data.type === 'Post'){
-						responseLock.classList.remove('engaged');
-						let state = messageEvent.data.message;
+				responseLock = document.getElementById('lock')
+				let _init
+				let baseDown
+				let baseUp
+				let boardSize
+				let startValue
+				window.onresize = resizeGameboard
+				window.addEventListener('message', (messageEvent) => {
+					if (!_init) {
+						_init = messageEvent.data
+						startValue = _init.settings.gameboard.startValue
+						boardSize = _init.settings.gameboard.boardLength
+						baseDown = boardSize
+						baseUp = boardSize * 2 + 1
+					} else if (messageEvent.data.type === 'Post') {
+						responseLock.classList.remove('engaged')
+						let state = messageEvent.data.message
 						// Rezero base columns.
-						document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>';
-						document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>';
+						document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>'
+						document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>'
 
 						// Recreate up and down rows.
-						let rowUp = document.getElementById('rowUp');
-						let rowDown = document.getElementById('rowDown');
-						rowUp.innerHTML = '';
-						rowDown.innerHTML = '';
-						for(let index = 0; index < boardSize; index++){
-							let indexUp = (boardSize*2 - index);
-							let indexDown = index;
-							rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>';
-							rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>';
+						let rowUp = document.getElementById('rowUp')
+						let rowDown = document.getElementById('rowDown')
+						rowUp.innerHTML = ''
+						rowDown.innerHTML = ''
+						for (let index = 0; index < boardSize; index++) {
+							let indexUp = boardSize * 2 - index
+							let indexDown = index
+							rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>'
+							rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
 						}
-						for(let index = 0; index < boardSize; index++){
-							let squareUp = document.getElementById('square_' + (boardSize*2-1-index));
-							let squareDown = document.getElementById('square_' + index);
+						for (let index = 0; index < boardSize; index++) {
+							let squareUp = document.getElementById('square_' + (boardSize * 2 - 1 - index))
+							let squareDown = document.getElementById('square_' + index)
 
-							squareUp.onmouseenter = onEnter;
-							squareUp.onmouseleave = onLeave;
-							squareUp.onclick = onClick;
+							squareUp.onmouseenter = onEnter
+							squareUp.onmouseleave = onLeave
+							squareUp.onclick = onClick
 
-							squareDown.onmouseenter = onEnter;
-							squareDown.onmouseleave = onLeave;
-							squareDown.onclick = onClick;
+							squareDown.onmouseenter = onEnter
+							squareDown.onmouseleave = onLeave
+							squareDown.onclick = onClick
 						}
-						resizeGameboard();
+						resizeGameboard()
 					}
-				});
-				window.opener.postMessage(null, '*');
+				})
+				window.opener.postMessage(null, '*')
 			}
-			function respond(response){
-				if(!responseLock.classList.contains('engaged')){
-					responseLock.classList.add('engaged');
+			function respond(response) {
+				if (!responseLock.classList.contains('engaged')) {
+					responseLock.classList.add('engaged')
 					window.opener.postMessage({
 						value: response,
-						executionSteps: {toRespond: 0, toTerminate: 0} // Optional by the arena.
-					}, '*');
+						executionSteps: { toRespond: 0, toTerminate: 0 }, // Optional by the arena.
+					}, '*')
 				}
 			}
 		</script>
