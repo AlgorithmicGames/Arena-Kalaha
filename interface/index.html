@@ -66,9 +66,11 @@
 				background-color: darkmagenta !important;
 			}
 		</style>
+		<script src="/InterfaceHelper.js"></script>
 		<script>
 			'use strict'
 			let responseLock
+			let humanWorker = null
 			function a() {
 				function onLeave(event) {
 					for (let index = 0; index < baseUp; index++) {
@@ -171,56 +173,61 @@
 				let boardSize
 				let startValue
 				window.onresize = resizeGameboard
-				window.addEventListener('message', (messageEvent) => {
-					if (!_init) {
-						_init = messageEvent.data
-						startValue = _init.settings.gameboard.startValue
-						boardSize = _init.settings.gameboard.boardLength
-						baseDown = boardSize
-						baseUp = boardSize * 2 + 1
-					} else if (messageEvent.data.type === 'Post') {
-						responseLock.classList.remove('engaged')
-						let state = messageEvent.data.message
-						// Rezero base columns.
-						document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>'
-						document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>'
+				InterfaceHelper.onInit((init, workerAdded) => {
+					_init = init
+					startValue = _init.settings.gameboard.startValue
+					boardSize = _init.settings.gameboard.boardLength
+					baseDown = boardSize
+					baseUp = boardSize * 2 + 1
+					workerAdded((worker) => {
+						humanWorker = worker
+						worker.onMessage = (message) => {
+							responseLock.classList.remove('engaged')
+							const state = message.data
+							// Rezero base columns.
+							document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>'
+							document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>'
 
-						// Recreate up and down rows.
-						let rowUp = document.getElementById('rowUp')
-						let rowDown = document.getElementById('rowDown')
-						rowUp.innerHTML = ''
-						rowDown.innerHTML = ''
-						for (let index = 0; index < boardSize; index++) {
-							let indexUp = boardSize * 2 - index
-							let indexDown = index
-							rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>'
-							rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
+							// Recreate up and down rows.
+							let rowUp = document.getElementById('rowUp')
+							let rowDown = document.getElementById('rowDown')
+							rowUp.innerHTML = ''
+							rowDown.innerHTML = ''
+							for (let index = 0; index < boardSize; index++) {
+								let indexUp = boardSize * 2 - index
+								let indexDown = index
+								rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>'
+								rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
+							}
+							for (let index = 0; index < boardSize; index++) {
+								let squareUp = document.getElementById('square_' + (boardSize * 2 - 1 - index))
+								let squareDown = document.getElementById('square_' + index)
+
+								squareUp.onmouseenter = onEnter
+								squareUp.onmouseleave = onLeave
+								squareUp.onclick = onClick
+
+								squareDown.onmouseenter = onEnter
+								squareDown.onmouseleave = onLeave
+								squareDown.onclick = onClick
+							}
+							resizeGameboard()
 						}
-						for (let index = 0; index < boardSize; index++) {
-							let squareUp = document.getElementById('square_' + (boardSize * 2 - 1 - index))
-							let squareDown = document.getElementById('square_' + index)
-
-							squareUp.onmouseenter = onEnter
-							squareUp.onmouseleave = onLeave
-							squareUp.onclick = onClick
-
-							squareDown.onmouseenter = onEnter
-							squareDown.onmouseleave = onLeave
-							squareDown.onclick = onClick
+						worker.onKilled = () => {
+							worker.respond('Dead')
 						}
-						resizeGameboard()
-					}
+					})
 				})
-				window.opener.postMessage(null, '*')
+				InterfaceHelper.signalReady()
 			}
 			function respond(response) {
-				if (!responseLock.classList.contains('engaged')) {
-					responseLock.classList.add('engaged')
-					window.opener.postMessage({
-						value: response,
-						executionSteps: { toRespond: 0, toTerminate: 0 }, // Optional by the arena.
-					}, '*')
+				if (!humanWorker || responseLock.classList.contains('engaged')) {
+					return
 				}
+				responseLock.classList.add('engaged')
+				humanWorker.respond(response, {
+					executionSteps: { toRespond: 0, toTerminate: 0 },
+				})
 			}
 		</script>
 	</head>
