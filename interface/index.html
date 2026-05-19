@@ -28,6 +28,7 @@
 			}
 
 			#gamebord {
+				color: black;
 				cursor: default;
 				user-select: none;
 				display: inline-block;
@@ -111,11 +112,11 @@
 					let square = event.target
 					let index = parseInt(square.id.substring(7))
 					let value = parseInt(square.innerHTML)
-					respond(index)
 
 					if (value === 0) {
 						return // Clicked on empty cell
 					}
+					respond(index)
 					onLeave() // Remove all hints
 					square.innerHTML = 0
 
@@ -166,6 +167,40 @@
 						gameboard.style.zoom = zoom
 					}
 				}
+				/** Team hues match `ReplayHelper` replay defaults (`#getColor`). */
+				function hslIndexToRgbHex(index, total) {
+					const offset = total % 1 ? 0.5 : 2 / 3
+					const hue = ((total ? index / total : index) + offset) % 1
+					const saturation = 1
+					const lightness = 0.5
+					const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation
+					const p = 2 * lightness - q
+					function hueToRGB(t) {
+						if (t < 0) t += 1
+						if (1 < t) t -= 1
+						if (t < 1 / 6) return p + (q - p) * 6 * t
+						if (t < 1 / 2) return q
+						if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+						return p
+					}
+					const R = hueToRGB(hue + 1 / 3)
+					const G = hueToRGB(hue)
+					const B = hueToRGB(hue - 1 / 3)
+					const toHex = (c) => {
+						const n = Math.round(255 * c).toString(16)
+						return n.length === 1 ? '0' + n : n
+					}
+					return '#' + toHex(R) + toHex(G) + toHex(B)
+				}
+				function teamRgbHex(teamIndex, teamCount) {
+					let idx = teamIndex
+					let total = teamCount
+					if (idx === 1 && total === 2) {
+						idx = 1
+						total = 3
+					}
+					return hslIndexToRgbHex(idx, total)
+				}
 				responseLock = document.getElementById('lock')
 				let _init
 				let baseDown
@@ -183,10 +218,13 @@
 						humanWorker = worker
 						worker.onMessage = (message) => {
 							responseLock.classList.remove('engaged')
-							const state = message.data
+							const state = Array.isArray(message.data) ? message.data : message.data?.gameboard
+							if (!Array.isArray(state)) {
+								return
+							}
 							// Rezero base columns.
-							document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up">' + state[baseUp] + '</div>'
-							document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square">' + state[baseDown] + '</div>'
+							document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up" style="background-color: ' + teamRgbHex(1, 2) + ';">' + state[baseUp] + '</div>'
+							document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square" style="background-color: ' + teamRgbHex(0, 2) + ';">' + state[baseDown] + '</div>'
 
 							// Recreate up and down rows.
 							let rowUp = document.getElementById('rowUp')
@@ -200,13 +238,7 @@
 								rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
 							}
 							for (let index = 0; index < boardSize; index++) {
-								let squareUp = document.getElementById('square_' + (boardSize * 2 - 1 - index))
 								let squareDown = document.getElementById('square_' + index)
-
-								squareUp.onmouseenter = onEnter
-								squareUp.onmouseleave = onLeave
-								squareUp.onclick = onClick
-
 								squareDown.onmouseenter = onEnter
 								squareDown.onmouseleave = onLeave
 								squareDown.onclick = onClick

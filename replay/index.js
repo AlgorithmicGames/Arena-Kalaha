@@ -4,11 +4,16 @@ function a() {
 	let buttonBack = document.getElementById('step-back')
 	let buttonNext = document.getElementById('step-next')
 	let scoreBoard = document.getElementById('score-board')
-	let _currentMatchIndex
+	let slider = document.getElementById('slider')
+	let ticksCache = []
+	let firstMover = null
+	let totalTickCount = 0
+	let stepHandler = null
+	const isTick = (entry) => entry?.type === 'tick' && entry.value?.gameboard
 	ReplayHelper.init((replay) => {
 		selectMatches.onchange = async () => {
-			_currentMatchIndex = parseInt(selectMatches.selectedOptions[0].dataset.index)
-			let matchLog = replay.arenaResult.match[_currentMatchIndex]
+			const matchIndex = parseInt(selectMatches.selectedOptions[0].dataset.index)
+			let matchLog = replay.arenaResult.match[matchIndex]
 			await matchLog.log.awaitCompletion()
 			if (matchLog.error) {
 				document.body.style.color = 'red'
@@ -19,10 +24,10 @@ function a() {
 			}
 			let scoreBoardString = '<div style="text-align: center; font-style: italic;">' + (replay.arenaResult.result.partialResult ? 'Partial result' : 'Result') + '</div><table><tr><th>Team</th><th>Participant</th>'
 			let dataRows = []
-			replay.arenaResult.match.forEach((matchLog, index) => {
-				if (matchLog.scores) {
+			replay.arenaResult.match.forEach((entry, index) => {
+				if (entry.scores) {
 					scoreBoardString += '<th>' + (1 < replay.arenaResult.match.length ? 'Match ' + (index + 1) : 'Score') + '</th>'
-					matchLog.scores.forEach((score) => {
+					entry.scores.forEach((score) => {
 						if (!dataRows[score.team]) {
 							dataRows[score.team] = ['<tr style="color:' + replay.arenaResult.teams[score.team].color.RGB + ';"><td>' + score.team + '</td><td>' + score.members[0].name + '</td>', score.score]
 						}
@@ -40,37 +45,30 @@ function a() {
 					dataRows[i][0] += '<td>' + r.total.score + '</td><td data-average="' + r.average.score + '">' + average + '</td></tr>'
 				})
 			}
-			scoreBoardString += dataRows.sort((s1, s2) => s2[1] - s1[1]).map((s) => s[0]).join('') + '</table>'
+			scoreBoardString += dataRows.sort((s1, s2) => s2[1] - s2[1]).map((s) => s[0]).join('') + '</table>'
 			scoreBoard.innerHTML = scoreBoardString
-			let firstLogEntry = await matchLog.log.get(0)
-			let firstMover = firstLogEntry?.value.mover
+			ticksCache = await matchLog.log.filter(isTick)
+			totalTickCount = ticksCache.length
+			slider.max = totalTickCount
+			slider.valueAsNumber = 0
+			let firstTick = ticksCache[0]
+			firstMover = firstTick?.value?.mover ?? null
 			let baseDown = replay.arenaResult.settings.gameboard.boardLength
 			let baseUp = baseDown * 2 + 1
-			let slider = document.getElementById('slider')
 			{
 				document.getElementById('first-player').innerHTML = firstMover ?? ''
 				let secund = document.getElementById('secund-player')
-				let secondLog = await matchLog.log.find((entry) => entry.value.mover !== firstMover)
-				if (secondLog) {
-					secund.innerHTML = secondLog.value.mover
-				}
-				if (secund.innerHTML === '') {
-					secund.innerHTML = firstMover ?? ''
-				}
+				let secondTick = ticksCache.find((entry) => entry.value.mover !== firstMover)
+				secund.innerHTML = secondTick ? secondTick.value.mover : (firstMover ?? '')
 			}
-			buttonBack.addEventListener('click', step)
-			buttonNext.addEventListener('click', step)
-			let totalLogCount = 0
-			matchLog.log.count().then((count) => {
-				totalLogCount = count
-				slider.max = count
-			})
-			matchLog.log.awaitCompletion().then(() => {
-				matchLog.log.count().then((count) => {
-					totalLogCount = count
-					slider.max = count
-				})
-			})
+			if (stepHandler) {
+				buttonBack.removeEventListener('click', stepHandler)
+				buttonNext.removeEventListener('click', stepHandler)
+			}
+			stepHandler = step
+			buttonBack.addEventListener('click', stepHandler)
+			buttonNext.addEventListener('click', stepHandler)
+			slider.oninput = () => setBoard(slider.valueAsNumber - 1)
 			window.onresize = resizeGameboard
 			setBoard()
 			function step(mouseEvent) {
@@ -79,11 +77,11 @@ function a() {
 			}
 			async function setBoard(logIndex = -1) {
 				buttonBack.disabled = slider.valueAsNumber === 0
-				let isFinished = slider.valueAsNumber === totalLogCount && totalLogCount > 0
+				let isFinished = slider.valueAsNumber === totalTickCount && totalTickCount > 0
 				buttonNext.disabled = isFinished
 				scoreBoard.parentElement.parentElement.style.display = isFinished ? '' : 'none'
-				let logEntry = -1 < logIndex ? await matchLog.log.get(logIndex) : null
-				let log = logEntry?.value ?? null
+				let tick = 0 <= logIndex && logIndex < ticksCache.length ? ticksCache[logIndex] : null
+				let log = tick?.value ?? null
 				let state = log !== null ? log.gameboard.slice() : null
 				if (log !== null && log.mover !== firstMover) {
 					for (let i = 0; i < state.length / 2; i++) {
@@ -115,6 +113,9 @@ function a() {
 			function resizeGameboard() {
 				let gameboard = document.getElementById('gameboard')
 				let allSquares = [...document.getElementsByClassName('square')]
+				if (!allSquares.length) {
+					return
+				}
 				gameboard.style.zoom = 1
 				let maxWidth = allSquares[0].clientHeight
 				for (let square of allSquares) {
@@ -128,13 +129,13 @@ function a() {
 				gameboard.style.zoom = zoom
 			}
 		}
-		replay.arenaResult.match.forEach((matchLog, index) => {
+		replay.arenaResult.match.forEach((_matchLog, index) => {
 			let option = document.createElement('option')
 			selectMatches.appendChild(option)
 			option.innerHTML = 'Match ' + (index + 1)
 			option.dataset.index = index
 			if (replay.arenaResult.match.length === 1) {
-				selectMatches.style.disabled = 'none'
+				selectMatches.style.display = 'none'
 			}
 		})
 		selectMatches.onchange()
