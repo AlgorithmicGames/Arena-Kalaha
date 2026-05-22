@@ -112,6 +112,7 @@ function a() {
 			}
 			function resizeGameboard() {
 				let gameboard = document.getElementById('gameboard')
+				let overlayHost = document.getElementById('gameboard-overlay-host')
 				let allSquares = [...document.getElementsByClassName('square')]
 				if (!allSquares.length) {
 					return
@@ -125,7 +126,7 @@ function a() {
 				for (let square of allSquares) {
 					square.style.width = maxWidth + 'px'
 				}
-				let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth
+				let zoom = overlayHost.parentElement.offsetWidth / gameboard.offsetWidth
 				gameboard.style.zoom = zoom
 			}
 		}
