@@ -92,7 +92,7 @@ function callParticipant(match, aiIndex) {
 			match.participants.terminateAllWorkers()
 			let score = sumScore(sumBoard(match.gameboard), match.gameboard.length - 2, match.settings.gameboard.startValue, match.participants)
 			if (score === null) {
-				ArenaHelper.postAbort(participant, 'General error - Illegal final score.')
+				throw new Error(participant.name + ': General error - Illegal final score.')
 			} else {
 				ArenaHelper.postDone()
 			}
@@ -101,7 +101,7 @@ function callParticipant(match, aiIndex) {
 		}
 	})
 }
-ArenaHelper.init = (participants, settings) => {
+ArenaHelper.init = ({ participants, settings }) => {
 	let gameboard = []
 	for (let i = 0; i < 2; i++) {
 		for (let n = 0; n < settings.gameboard.boardLength; n++) {
