@@ -5,99 +5,101 @@
 		<title>Replay</title>
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-TJFMG29186"></script>
 		<script>
-			window.dataLayer = window.dataLayer || []
-			function gtag() {
-				dataLayer.push(arguments)
-			}
-			gtag('js', new Date())
-			gtag('config', 'G-TJFMG29186')
+		window.dataLayer = window.dataLayer || []
+		function gtag() {
+			dataLayer.push(arguments)
+		}
+		gtag('js', new Date())
+		gtag('config', 'G-TJFMG29186')
 		</script>
 		<meta content="width=device-width, initial-scale=1.0" name="viewport">
 		<meta content="yes" name="mobile-web-app-capable">
 		<style>
-			#gameboard-wrapper {
-				text-align: center;
-			}
-			#secund-player {
-				display: block;
-				text-align: left;
-			}
-			#first-player {
-				display: block;
-				text-align: right;
-			}
+		#gameboard-wrapper {
+			text-align: center;
+		}
+		#secund-player {
+			display: block;
+			text-align: left;
+		}
+		#first-player {
+			display: block;
+			text-align: right;
+		}
 
-			#gameboard {
-				color: black;
-				cursor: default;
-				user-select: none;
-				display: inline-block;
-				border: 1px solid black;
-				background-color: whitesmoke;
-			}
+		#gameboard {
+			color: black;
+			cursor: default;
+			user-select: none;
+			display: inline-block;
+			border: 1px solid black;
+			background-color: whitesmoke;
+		}
 
-			#gameboard-overlay-host {
-				position: relative;
-				display: block;
-				width: 100%;
-			}
-			#score-board-outer-wrapper {
-				position: absolute;
-				inset: 0;
-				overflow: hidden;
-				color: chartreuse;
-				pointer-events: none;
-			}
-			#score-board-inner-wrapper {
-				display: flex;
-				height: 100%;
-				justify-content: center;
-				align-items: center;
-			}
-			#score-board {
-				pointer-events: auto;
-				box-sizing: border-box;
-				max-width: 100%;
-				max-height: 100%;
-				overflow: auto;
-				border: 1px solid black;
-				background-color: rgba(0, 0, 0, 0.9);
-				border-radius: 25px;
-				padding: 15px;
-				text-align: left;
-			}
-			#score-board tr > th:not(:first-child), #score-board tr > td:not(:first-child) {
-				padding-left: 1em;
-			}
+		#gameboard-overlay-host {
+			position: relative;
+			display: block;
+			width: 100%;
+		}
+		#score-board-outer-wrapper {
+			position: absolute;
+			inset: 0;
+			overflow: hidden;
+			color: chartreuse;
+			pointer-events: none;
+		}
+		#score-board-inner-wrapper {
+			display: flex;
+			height: 100%;
+			justify-content: center;
+			align-items: center;
+		}
+		#score-board {
+			pointer-events: auto;
+			box-sizing: border-box;
+			max-width: 100%;
+			max-height: 100%;
+			overflow: auto;
+			border: 1px solid black;
+			background-color: rgba(0, 0, 0, 0.9);
+			border-radius: 25px;
+			padding: 15px;
+			text-align: left;
+		}
+		#score-board tr > th:not(:first-child),
+		#score-board tr > td:not(:first-child) {
+			padding-left: 1em;
+		}
 
-			#controller {
-				width: 100%;
-				display: flex;
-			}
-			#slider {
-				width: -webkit-fill-available;
-			}
+		#controller {
+			width: 100%;
+			display: flex;
+		}
+		#slider {
+			width: -webkit-fill-available;
+		}
 
-			.column {
-				display: table-cell;
-			}
+		.column {
+			display: table-cell;
+		}
 
-			.row {
-				display: flex;
-			}
+		.row {
+			display: flex;
+		}
 
-			#column-up > .square, #column-down > .square {
-				transform: translate(0%, 50%);
-				display: inline-grid;
-			}
+		#column-up > .square,
+		#column-down > .square {
+			transform: translate(0%, 50%);
+			display: inline-grid;
+		}
 
-			.square {
-				border: 1px solid black;
-				border-radius: 50%;
-				text-align: center;
-				min-width: 18.2px;
-				margin: 1px;
-			}
+		.square {
+			border: 1px solid black;
+			border-radius: 50%;
+			text-align: center;
+			min-width: 18.2px;
+			margin: 1px;
+		}
 		</style>
 		<script src="/ReplayHelper.js"></script>
 		<script src="index.js"></script>

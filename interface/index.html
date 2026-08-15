@@ -6,261 +6,262 @@
 		<meta content="width=device-width, initial-scale=1.0" name="viewport">
 		<meta content="yes" name="mobile-web-app-capable">
 		<style>
-			#lock {
-				display: none;
-			}
-			#lock.engaged {
-				background: rgba(128, 128, 128, 0.5);
-				justify-content: center;
-				font-size: xxx-large;
-				align-items: center;
-				position: absolute;
-				display: flex;
-				z-index: 9999;
-				height: 100%;
-				width: 100%;
-				right: 0;
-				top: 0;
-			}
+		#lock {
+			display: none;
+		}
+		#lock.engaged {
+			background: rgba(128, 128, 128, 0.5);
+			justify-content: center;
+			font-size: xxx-large;
+			align-items: center;
+			position: absolute;
+			display: flex;
+			z-index: 9999;
+			height: 100%;
+			width: 100%;
+			right: 0;
+			top: 0;
+		}
 
-			#gamebord-wrapper {
-				text-align: center;
-			}
+		#gamebord-wrapper {
+			text-align: center;
+		}
 
-			#gamebord {
-				color: black;
-				cursor: default;
-				user-select: none;
-				display: inline-block;
-				border: 1px solid black;
-				background-color: whitesmoke;
-			}
+		#gamebord {
+			color: black;
+			cursor: default;
+			user-select: none;
+			display: inline-block;
+			border: 1px solid black;
+			background-color: whitesmoke;
+		}
 
-			.column {
-				display: table-cell;
-			}
+		.column {
+			display: table-cell;
+		}
 
-			.row {
-				display: flex;
-			}
+		.row {
+			display: flex;
+		}
 
-			#column-up > .square, #column-down > .square {
-				transform: translate(0%, 50%);
-				display: inline-grid;
-			}
+		#column-up > .square,
+		#column-down > .square {
+			transform: translate(0%, 50%);
+			display: inline-grid;
+		}
 
-			.square {
-				border: 1px solid black;
-				border-radius: 50%;
-				text-align: center;
-				min-width: 18.2px;
-				margin: 1px;
-			}
+		.square {
+			border: 1px solid black;
+			border-radius: 50%;
+			text-align: center;
+			min-width: 18.2px;
+			margin: 1px;
+		}
 
-			.marked {
-				border-color: orange;
-			}
-			.hint {
-				border-color: crimson;
-			}
-			.final {
-				background-color: darkmagenta !important;
-			}
+		.marked {
+			border-color: orange;
+		}
+		.hint {
+			border-color: crimson;
+		}
+		.final {
+			background-color: darkmagenta !important;
+		}
 		</style>
 		<script src="/InterfaceHelper.js"></script>
 		<script>
-			'use strict'
-			let responseLock
-			let humanWorker = null
-			function a() {
-				function onLeave(event) {
-					for (let index = 0; index < baseUp; index++) {
-						let square = document.getElementById('square_' + index)
-						square.classList.remove('marked')
-						square.classList.remove('hint')
-						square.classList.remove('final')
-					}
+		'use strict'
+		let responseLock
+		let humanWorker = null
+		function a() {
+			function onLeave(event) {
+				for (let index = 0; index < baseUp; index++) {
+					let square = document.getElementById('square_' + index)
+					square.classList.remove('marked')
+					square.classList.remove('hint')
+					square.classList.remove('final')
 				}
-				function onEnter(event) {
-					let square = event.target
-					let index = parseInt(square.id.substring('square_'.length))
-					let value = parseInt(square.innerHTML)
-					let valueWasZero = value == 0
-
-					if (baseDown <= index) {
-						return // Is on wrong side
-					}
-					square.classList.add('marked')
-					while (0 < value) {
-						index++
-						index %= baseUp
-
-						if (index === baseUp) {
-							continue // Is on wrong base
-						}
-
-						value--
-
-						document.getElementById('square_' + index).classList.add('hint')
-					}
-
-					if (!valueWasZero) {
-						document.getElementById('square_' + index).classList.add('final')
-					}
-				}
-				function onClick(event) {
-					let square = event.target
-					let index = parseInt(square.id.substring(7))
-					let value = parseInt(square.innerHTML)
-
-					if (value === 0) {
-						return // Clicked on empty cell
-					}
-					respond(index)
-					onLeave() // Remove all hints
-					square.innerHTML = 0
-
-					while (0 < value) {
-						index++
-						index %= baseUp
-
-						if (index === baseUp) {
-							continue
-						}
-						value--
-						let nextSquare = document.getElementById('square_' + index)
-						let currentValue = parseInt(nextSquare.innerHTML)
-
-						let isOnRightSide = 0 <= index && index < baseDown
-						if (currentValue === 0 && value === 0 && isOnRightSide && _init.settings.rules.empty_capture) {
-							index = boardSize * 2 - index
-							let opositSquare = document.getElementById('square_' + index)
-							let opositValue = parseInt(opositSquare.innerHTML)
-							opositSquare.innerHTML = 0
-
-							let baseSquare = document.getElementById('square_' + baseDown)
-							let baseValue = parseInt(baseSquare.innerHTML)
-							baseSquare.innerHTML = baseValue + opositValue + 1
-						} else {
-							nextSquare.innerHTML = currentValue + 1
-						}
-					}
-
-					resizeGameboard()
-				}
-				function resizeGameboard() {
-					let gameboard = document.getElementById('gamebord')
-					let allSquares = [...document.getElementsByClassName('square')]
-					gameboard.style.zoom = 1
-					if (allSquares.length) {
-						let maxWidth = allSquares[0].clientHeight
-						// Get max
-						for (let square of allSquares) {
-							square.style.width = ''
-							maxWidth = Math.max(maxWidth, square.clientWidth)
-						}
-						// Set max
-						for (let square of allSquares) {
-							square.style.width = maxWidth + 'px'
-						}
-						let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth
-						gameboard.style.zoom = zoom
-					}
-				}
-				/** Team hues match `ReplayHelper` replay defaults (`#getColor`). */
-				function hslIndexToRgbHex(index, total) {
-					const offset = total % 1 ? 0.5 : 2 / 3
-					const hue = ((total ? index / total : index) + offset) % 1
-					const saturation = 1
-					const lightness = 0.5
-					const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation
-					const p = 2 * lightness - q
-					function hueToRGB(t) {
-						if (t < 0) t += 1
-						if (1 < t) t -= 1
-						if (t < 1 / 6) return p + (q - p) * 6 * t
-						if (t < 1 / 2) return q
-						if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-						return p
-					}
-					const R = hueToRGB(hue + 1 / 3)
-					const G = hueToRGB(hue)
-					const B = hueToRGB(hue - 1 / 3)
-					const toHex = (c) => {
-						const n = Math.round(255 * c).toString(16)
-						return n.length === 1 ? '0' + n : n
-					}
-					return '#' + toHex(R) + toHex(G) + toHex(B)
-				}
-				function teamRgbHex(teamIndex, teamCount) {
-					let idx = teamIndex
-					let total = teamCount
-					if (idx === 1 && total === 2) {
-						idx = 1
-						total = 3
-					}
-					return hslIndexToRgbHex(idx, total)
-				}
-				responseLock = document.getElementById('lock')
-				let _init
-				let baseDown
-				let baseUp
-				let boardSize
-				let startValue
-				window.onresize = resizeGameboard
-				InterfaceHelper.onInit((init, workerAdded) => {
-					_init = init
-					startValue = _init.settings.gameboard.startValue
-					boardSize = _init.settings.gameboard.boardLength
-					baseDown = boardSize
-					baseUp = boardSize * 2 + 1
-					workerAdded((worker) => {
-						humanWorker = worker
-						worker.onMessage = (message) => {
-							responseLock.classList.remove('engaged')
-							const state = Array.isArray(message.data) ? message.data : message.data?.gameboard
-							if (!Array.isArray(state)) {
-								return
-							}
-							// Rezero base columns.
-							document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up" style="background-color: ' + teamRgbHex(1, 2) + ';">' + state[baseUp] + '</div>'
-							document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square" style="background-color: ' + teamRgbHex(0, 2) + ';">' + state[baseDown] + '</div>'
-
-							// Recreate up and down rows.
-							let rowUp = document.getElementById('rowUp')
-							let rowDown = document.getElementById('rowDown')
-							rowUp.innerHTML = ''
-							rowDown.innerHTML = ''
-							for (let index = 0; index < boardSize; index++) {
-								let indexUp = boardSize * 2 - index
-								let indexDown = index
-								rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>'
-								rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
-							}
-							for (let index = 0; index < boardSize; index++) {
-								let squareDown = document.getElementById('square_' + index)
-								squareDown.onmouseenter = onEnter
-								squareDown.onmouseleave = onLeave
-								squareDown.onclick = onClick
-							}
-							resizeGameboard()
-						}
-						worker.onKilled = () => {
-							worker.respond('Dead')
-						}
-					})
-				})
-				InterfaceHelper.signalReady()
 			}
-			function respond(response) {
-				if (!humanWorker || responseLock.classList.contains('engaged')) {
-					return
+			function onEnter(event) {
+				let square = event.target
+				let index = parseInt(square.id.substring('square_'.length))
+				let value = parseInt(square.innerHTML)
+				let valueWasZero = value == 0
+
+				if (baseDown <= index) {
+					return // Is on wrong side
 				}
-				responseLock.classList.add('engaged')
-				humanWorker.respond(response, {
-					executionSteps: { toRespond: 0, toTerminate: 0 },
-				})
+				square.classList.add('marked')
+				while (0 < value) {
+					index++
+					index %= baseUp
+
+					if (index === baseUp) {
+						continue // Is on wrong base
+					}
+
+					value--
+
+					document.getElementById('square_' + index).classList.add('hint')
+				}
+
+				if (!valueWasZero) {
+					document.getElementById('square_' + index).classList.add('final')
+				}
 			}
+			function onClick(event) {
+				let square = event.target
+				let index = parseInt(square.id.substring(7))
+				let value = parseInt(square.innerHTML)
+
+				if (value === 0) {
+					return // Clicked on empty cell
+				}
+				respond(index)
+				onLeave() // Remove all hints
+				square.innerHTML = 0
+
+				while (0 < value) {
+					index++
+					index %= baseUp
+
+					if (index === baseUp) {
+						continue
+					}
+					value--
+					let nextSquare = document.getElementById('square_' + index)
+					let currentValue = parseInt(nextSquare.innerHTML)
+
+					let isOnRightSide = 0 <= index && index < baseDown
+					if (currentValue === 0 && value === 0 && isOnRightSide && _init.settings.rules.empty_capture) {
+						index = boardSize * 2 - index
+						let opositSquare = document.getElementById('square_' + index)
+						let opositValue = parseInt(opositSquare.innerHTML)
+						opositSquare.innerHTML = 0
+
+						let baseSquare = document.getElementById('square_' + baseDown)
+						let baseValue = parseInt(baseSquare.innerHTML)
+						baseSquare.innerHTML = baseValue + opositValue + 1
+					} else {
+						nextSquare.innerHTML = currentValue + 1
+					}
+				}
+
+				resizeGameboard()
+			}
+			function resizeGameboard() {
+				let gameboard = document.getElementById('gamebord')
+				let allSquares = [...document.getElementsByClassName('square')]
+				gameboard.style.zoom = 1
+				if (allSquares.length) {
+					let maxWidth = allSquares[0].clientHeight
+					// Get max
+					for (let square of allSquares) {
+						square.style.width = ''
+						maxWidth = Math.max(maxWidth, square.clientWidth)
+					}
+					// Set max
+					for (let square of allSquares) {
+						square.style.width = maxWidth + 'px'
+					}
+					let zoom = gameboard.parentElement.offsetWidth / gameboard.offsetWidth
+					gameboard.style.zoom = zoom
+				}
+			}
+			/** Team hues match `ReplayHelper` replay defaults (`#getColor`). */
+			function hslIndexToRgbHex(index, total) {
+				const offset = total % 1 ? 0.5 : 2 / 3
+				const hue = ((total ? index / total : index) + offset) % 1
+				const saturation = 1
+				const lightness = 0.5
+				const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation
+				const p = 2 * lightness - q
+				function hueToRGB(t) {
+					if (t < 0) t += 1
+					if (1 < t) t -= 1
+					if (t < 1 / 6) return p + (q - p) * 6 * t
+					if (t < 1 / 2) return q
+					if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+					return p
+				}
+				const R = hueToRGB(hue + 1 / 3)
+				const G = hueToRGB(hue)
+				const B = hueToRGB(hue - 1 / 3)
+				const toHex = (c) => {
+					const n = Math.round(255 * c).toString(16)
+					return n.length === 1 ? '0' + n : n
+				}
+				return '#' + toHex(R) + toHex(G) + toHex(B)
+			}
+			function teamRgbHex(teamIndex, teamCount) {
+				let idx = teamIndex
+				let total = teamCount
+				if (idx === 1 && total === 2) {
+					idx = 1
+					total = 3
+				}
+				return hslIndexToRgbHex(idx, total)
+			}
+			responseLock = document.getElementById('lock')
+			let _init
+			let baseDown
+			let baseUp
+			let boardSize
+			let startValue
+			window.onresize = resizeGameboard
+			InterfaceHelper.onInit((init, workerAdded) => {
+				_init = init
+				startValue = _init.settings.gameboard.startValue
+				boardSize = _init.settings.gameboard.boardLength
+				baseDown = boardSize
+				baseUp = boardSize * 2 + 1
+				workerAdded((worker) => {
+					humanWorker = worker
+					worker.onMessage = (message) => {
+						responseLock.classList.remove('engaged')
+						const state = Array.isArray(message.data) ? message.data : message.data?.gameboard
+						if (!Array.isArray(state)) {
+							return
+						}
+						// Rezero base columns.
+						document.getElementById('column-up').innerHTML = '<div id="square_' + baseUp + '" class="square square-up" style="background-color: ' + teamRgbHex(1, 2) + ';">' + state[baseUp] + '</div>'
+						document.getElementById('column-down').innerHTML = '<div id="square_' + baseDown + '" class="square" style="background-color: ' + teamRgbHex(0, 2) + ';">' + state[baseDown] + '</div>'
+
+						// Recreate up and down rows.
+						let rowUp = document.getElementById('rowUp')
+						let rowDown = document.getElementById('rowDown')
+						rowUp.innerHTML = ''
+						rowDown.innerHTML = ''
+						for (let index = 0; index < boardSize; index++) {
+							let indexUp = boardSize * 2 - index
+							let indexDown = index
+							rowUp.innerHTML += '<div id="square_' + indexUp + '" class="square square-up">' + state[indexUp] + '</div>'
+							rowDown.innerHTML += '<div id="square_' + indexDown + '" class="square">' + state[indexDown] + '</div>'
+						}
+						for (let index = 0; index < boardSize; index++) {
+							let squareDown = document.getElementById('square_' + index)
+							squareDown.onmouseenter = onEnter
+							squareDown.onmouseleave = onLeave
+							squareDown.onclick = onClick
+						}
+						resizeGameboard()
+					}
+					worker.onKilled = () => {
+						worker.respond('Dead')
+					}
+				})
+			})
+			InterfaceHelper.signalReady()
+		}
+		function respond(response) {
+			if (!humanWorker || responseLock.classList.contains('engaged')) {
+				return
+			}
+			responseLock.classList.add('engaged')
+			humanWorker.respond(response, {
+				executionSteps: { toRespond: 0, toTerminate: 0 },
+			})
+		}
 		</script>
 	</head>
 	<body onload="a()">
